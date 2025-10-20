@@ -10,17 +10,34 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
 
-    <TextView
-        android:id="@+id/speed_text"
-        android:text="Speed: 0 km/h"
-        android:textSize="18sp"
-        android:textColor="@android:color/white"
+    <LinearLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_margin="16dp"
-        android:background="#66000000"
-        android:padding="8dp"
-        android:layout_gravity="top|end" />
+        android:orientation="vertical"
+        android:layout_gravity="top|end"
+        android:layout_margin="16dp">
+
+        <TextView
+            android:id="@+id/speed_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Speed: 0 km/h"
+            android:textSize="18sp"
+            android:textColor="@android:color/white"
+            android:background="#66000000"
+            android:padding="8dp"
+            android:layout_marginBottom="4dp" />
+
+        <TextView
+            android:id="@+id/speed_limit"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Speed Limit: 0 km/h"
+            android:textSize="18sp"
+            android:textColor="@android:color/holo_blue_bright"
+            android:background="#66000000"
+            android:padding="8dp" />
+    </LinearLayout>
 
     <Button
         android:id="@+id/btn_follow"

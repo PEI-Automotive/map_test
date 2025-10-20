@@ -6,6 +6,7 @@ import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import com.example.pei_test.OverpassApiClient
 import com.example.test_app_2.databinding.ActivityTestMapBinding
 import org.osmdroid.config.Configuration
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
@@ -13,6 +14,7 @@ import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.mylocation.GpsMyLocationProvider
 import org.osmdroid.views.overlay.mylocation.MyLocationNewOverlay
+import kotlinx.coroutines.*
 
 class TestMapActivity : AppCompatActivity() {
 
@@ -41,20 +43,24 @@ class TestMapActivity : AppCompatActivity() {
         locationOverlay.isDrawAccuracyEnabled = true
 
         // Track speed
-        val updateThread = Thread {
-            while (true) {
+        val updateJob = CoroutineScope(Dispatchers.Default).launch {
+            while (isActive) {
                 val lastFix = locationOverlay.lastFix
                 if (lastFix != null) {
-                    val speedMps = lastFix.speed // meters per second
+                    val speedMps = lastFix.speed
                     val speedKmh = speedMps * 3.6
-                    runOnUiThread {
+
+                    // Call suspend function properly inside coroutine
+                    val speedLimit = OverpassApiClient.getSpeedLimit(lastFix.latitude, lastFix.longitude)
+
+                    withContext(Dispatchers.Main) {
                         binding.speedText.text = "Speed: %.2f km/h".format(speedKmh)
+                        binding.speedLimit.text = "Speed Limit: $speedLimit"
                     }
                 }
-                Thread.sleep(1000) // update every second
+                delay(1000) // coroutine-friendly sleep
             }
         }
-        updateThread.start()
 
         map.overlays.add(locationOverlay)
         map.controller.setZoom(17.0) // nice zoom for location view
@@ -96,4 +102,5 @@ class TestMapActivity : AppCompatActivity() {
         super.onPause()
         map.onPause()
     }
+
 }
