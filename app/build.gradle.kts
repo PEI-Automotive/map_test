@@ -52,4 +52,5 @@ dependencies {
     implementation(libs.play.services.location)
 
     implementation("org.eclipse.paho:org.eclipse.paho.client.mqttv3:1.2.5")
+    implementation("org.json:json:20231013")
 }

@@ -29,32 +29,6 @@ class MainActivity : AppCompatActivity() {
         // wire map ready callback
         mapController.init {
             // called when style & layers are ready
-            // Example: center on a single location
-            mapController.setSingleLocation(40.641528719599606, -8.654951875205159, 0f)
-
-            // Example: optionally start a small route simulation
-            mapController.simulateRoute(listOf(
-                Pair(40.641528719599606, -8.654951875205159),
-                Pair(40.64154907218252, -8.655010883800715),
-                Pair(40.64156535424438, -8.655099396694052),
-                Pair(40.64158163630226, -8.655147676454051),
-                Pair(40.64159384784306, -8.655217413885165),
-                Pair(40.64160605938165, -8.65525496480961),
-                Pair(40.64162234142961, -8.655319337822945),
-                Pair(40.641652870258824, -8.65540516850739),
-                Pair(40.641654905513604, -8.65542930838739),
-                Pair(40.64168136382016, -8.655493681400726),
-                Pair(40.64170375160981, -8.655576829876281),
-                Pair(40.641754632922016, -8.655700211485172),
-                Pair(40.64178312643992, -8.655794088796286),
-                Pair(40.64182586669396, -8.655941610285177),
-                Pair(40.64185838028008, -8.656057192974982),
-                Pair(40.64190011527218, -8.656170989465613),
-                Pair(40.64196055900682, -8.656225991105142),
-                Pair(40.642059859308105, -8.656225042801807),
-                Pair(40.642145487710735, -8.656214611457555),
-                Pair(40.64224478773659, -8.656211766545637),
-            ))
         }
     }
 
@@ -64,8 +38,31 @@ class MainActivity : AppCompatActivity() {
 
         // Set callback for received messages
         mqttManager.setOnMessageReceived { topic, message ->
-            runOnUiThread {
-                uiController.showPopup("Topic: $topic", message)
+            when {
+                topic.startsWith("alerts/") -> {
+                    runOnUiThread {
+                        uiController.showPopup("Alert", message)
+                    }
+                }
+                topic.startsWith("cars/updates") -> {
+                    try {
+                        val carData = org.json.JSONObject(message)
+                        val carId = carData.optString("car_id", "Unknown")
+                        val lat = carData.optDouble("latitude", 0.0)
+                        val lon = carData.optDouble("longitude", 0.0)
+                        val speedKmh = carData.optDouble("speed_kmh", 0.0)
+                        val headingDeg = carData.optDouble("heading_deg", 0.0).toFloat()
+                        
+                        runOnUiThread {
+                            // Update map with car position and heading
+                            mapController.setSingleLocation(lat, lon, headingDeg)
+                            // Update speed on UI
+                            uiController.updateCurrentSpeed(speedKmh.toInt())
+                        }
+                    } catch (e: Exception) {
+                        // Ignore JSON parsing errors
+                    }
+                }
             }
         }
 
@@ -80,6 +77,20 @@ class MainActivity : AppCompatActivity() {
                     onSuccess = { 
                         runOnUiThread {
                             uiController.showConnectionStatus("✓ Subscribed to alerts/#")
+                        }
+                    },
+                    onError = { error -> 
+                        runOnUiThread {
+                            uiController.showConnectionStatus("✗ Subscribe failed: $error")
+                        }
+                    }
+                )
+                
+                // Also subscribe to car updates
+                mqttManager.subscribe("cars/updates",
+                    onSuccess = { 
+                        runOnUiThread {
+                            uiController.showConnectionStatus("✓ Subscribed to cars/updates")
                         }
                     },
                     onError = { error -> 
